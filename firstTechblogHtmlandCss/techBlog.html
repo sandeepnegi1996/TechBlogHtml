@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>GeekTech</title>
+
+        <style>
+            .content1{
+                margin:auto;
+                max-width: 1000px;
+                text-align: justify;
+                text-justify: inter-word;
+            }
+            body{
+                background-color:rgb(205, 241, 223);
+            }
+            .list1{
+                font-size: 18px;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+                
+            }
+           .content1 img{
+                max-width: 100%;
+                border: 10px solid;
+                border-color: cadetblue;
+            }
+            .content1 h1{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
+            }
+            .content1 pre{
+                font-size: 15px;
+            }
+            
+        </style>
+    </head>
+    <body>
+        <div class="content1">
+        <h1>Sending the Telemetry data to Azure iot hub using Console(C#)</h1>
+        <img src="iot.jpg" > 
+        <h4>Steps:- </h4>
+        <ol class="list1">
+            <li>Create a Dot net console Application</li>
+            <li>Add the nuget package for Microsoft.Azure.Devices</li>
+            <li>Connection string for the azure iot hub devices
+                <ol>
+                    <li>create an iot hub in azure portal</li>
+                    <li>create a new device(MyDotnetDevice)</li>
+                    <li>Get the Connection string for the device </li>
+
+                </ol>
+            </li>
+            <li>Create a random telemetry data like Temperature,humidity</li>
+            <li>put the data inside a object and serialize it </li>
+            <li>encode the data and send it </li>
+        </ol>
+        <hr>
+        <pre>
+        <code>
+
+            using System;
+            using Microsoft.Azure.Devices.Client;
+            using Newtonsoft.Json;
+            using System.Text;
+            using System.Threading.Tasks;
+
+            namespace simulated_device
+            {
+                class Simulator_For_SendingData
+                {
+                    private static DeviceClient s_deviceClient;
+
+                    //you have to give the connection string for your own device
+                    private readonly static string s_connectionString = "HostName=ArIOTHub.azure-devices.net;DeviceId=Device1;SharedAccessKey=msRVEiPCepnxYI1IcE+GlTATe2wek4NAoB40A9fNVI8=";
+
+                    private static async void SendDeviceToCloudMessagesAsync()
+                    {
+                        
+                        int minTemperature = 20;
+                        int minHumidity = 60;
+                        Random rand = new Random();
+
+                        while (true)
+                        {
+                            int currentTemperature = minTemperature + rand.Next(1, 6) * 15;
+                            int currentHumidity = minHumidity + rand.Next(1, 6) * 20;
+                            DateTime currentDate = DateTime.Now;
+                            int currentPressure = minPressure + rand.Next(1, 6) * 5;
+                            // Create JSON message
+                            
+                            var telemetryDataPoint = new
+                            {
+                                DeviceId= currentDeviceId,
+                                DeviceName=currentName,
+                                Temperature = currentTemperature,
+                                Humidity = currentHumidity,
+                                Load = currentload,
+                                Pressure =currentPressure,
+                                Date= currentDate.ToString("dd MMMM yyyy HH:mm:ss")
+                            
+                            };
+
+                                //serializing the message
+                            var messageString = JsonConvert.SerializeObject(telemetryDataPoint);
+                                //encoding the message
+                            var message = new Message(Encoding.ASCII.GetBytes(messageString));
+
+                            // Add a custom application property to the message.
+                            // An IoT hub can filter on these properties without access to the message body.
+                            message.Properties.Add("temperatureAlert", (currentTemperature > 30) ? "true" : "false");
+
+                            // Send the telemetry message
+                            await s_deviceClient.SendEventAsync(message);
+                            Console.WriteLine("{0} > Sending message: {1}", DateTime.Now, messageString);
+
+                            await Task.Delay(1000);
+                        }
+                    }
+                    private static void Main(string[] args)
+                    {
+                        Console.WriteLine("IoT Hub - Simulated device. Ctrl-C to exit.\n");
+
+                        // Connect to the IoT hub using the MQTT protocol
+                        s_deviceClient = DeviceClient.CreateFromConnectionString(s_connectionString, TransportType.Mqtt);
+                        SendDeviceToCloudMessagesAsync();
+                        Console.ReadLine();
+                    }
+                }
+            }
+
+
+        </code>
+        </pre>
+        <hr>
+        <form action="post">
+            Name:    <input type="text" name="name"><br><br>
+            Comment: <textarea name="comment"></textarea><br><br>
+            <input type="submit" value="submit"><br>
+        </form>
+        </div>
+    </body>
+</html>
